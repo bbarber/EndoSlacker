@@ -2,7 +2,6 @@ var express = require('express');
 var fs = require('fs');
 var cheerio = require('cheerio');
 var request = require('request');
-var secrets = require('./secrets');
 var app = express();
 var last = "";
 
@@ -46,7 +45,7 @@ app.get('/', function (req, res) {
             if (last !== body) {
                 last = body;
 
-                var params = '?token=' + secrets.slack.token + '&channel=%23' + secrets.slack.channel;
+                var params = '?token=' + process.env.token + '&channel=%23' + process.env.channel;
                 var options = {
                     url: 'https://dontpaniclabs.slack.com/services/hooks/slackbot' + params,
                     body: "```" + body + "```"
