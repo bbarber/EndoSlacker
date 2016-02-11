@@ -2,6 +2,9 @@
   "name": "endoslacker",
   "version": "0.0.1",
   "private": true,
+  "scripts": {
+    "start": "node app.js"
+  },
   "dependencies": {
     "cheerio": "^0.20.0",
     "ejs": "^2.3.1",
