@@ -6,9 +6,6 @@ var app = express();
 var last = "";
 
 app.get('/', function (req, res) {
-    
-    console.log('here');
-    
     var url = 'https://www.endomondo.com/challenges/26556403';
     request(url, function (error, response, html) {
         if (!error) {
