@@ -12,7 +12,7 @@ app.get('/', function (req, res) {
             var $ = cheerio.load(html);
 
             var names = $('td .name').map(function (i, a) {
-                return a.children[0].data.replace('You', 'Branden Barber');
+                return a.children[0].data.replace('Norm', 'Nick');
             });
 
             var maxLength = 0;
