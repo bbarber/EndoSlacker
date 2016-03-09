@@ -6,7 +6,7 @@ var app = express();
 var last = "";
 
 app.get('/', function (req, res) {
-    var url = 'https://www.endomondo.com/challenges/26556403';
+    var url = 'https://www.endomondo.com/challenges/27408592';
     request(url, function (error, response, html) {
         if (!error) {
             var $ = cheerio.load(html);
@@ -27,7 +27,7 @@ app.get('/', function (req, res) {
             });
 
             var kcals = $('.nose').map(function (i, a) {
-                return a.children[0].data.replace('&nbsp;kcal', '');
+                return a.children[0].data;
             });
 
             var arr = kcals.map(function (i, score) {
