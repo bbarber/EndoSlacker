@@ -3,7 +3,6 @@ var fs = require('fs');
 var cheerio = require('cheerio');
 var request = require('request');
 var app = express();
-var last = "";
 
 app.get('/', function (req, res) {
     var url = 'https://www.endomondo.com/challenges/27408592';
@@ -21,16 +20,16 @@ app.get('/', function (req, res) {
                     maxLength = names[i].length;
             }
 
-            // Pad names so kcals right align
+            // Pad names so scores right align
             names = names.map(function (i, a) {
                 return a + Array(maxLength - a.length + 1).join(' ');
             });
 
-            var kcals = $('.nose').map(function (i, a) {
+            var scores = $('.nose').map(function (i, a) {
                 return a.children[0].data;
             });
 
-            var arr = kcals.map(function (i, score) {
+            var arr = scores.map(function (i, score) {
                 return names[i] + ' - ' + score;
             });
 
@@ -41,20 +40,29 @@ app.get('/', function (req, res) {
 
             var body = list.join('\r\n');
 
+            fs.readFile("last.txt", 'utf8', function (err, last) {
+                if (err && err.code !== 'ENOENT')
+                    throw err;
 
-            if (last !== body) {
-                last = body;
+                if (last !== body) {
 
-                var params = '?token=' + process.env.token + '&channel=%23' + process.env.channel;
-                var options = {
-                    url: 'https://dontpaniclabs.slack.com/services/hooks/slackbot' + params,
-                    body: "```" + body + "```"
-                };
+                    fs.writeFile("last.txt", body, function (err) {
+                        if (err) {
+                            return console.log(err);
+                        }
 
-                request.post(options);
-            }
+                        var params = '?token=' + process.env.token + '&channel=%23' + process.env.channel;
+                        var options = {
+                            url: 'https://dontpaniclabs.slack.com/services/hooks/slackbot' + params,
+                            body: "```" + body + "```"
+                        };
 
-            res.send('<pre>' + body + '</pre>');
+                        request.post(options);
+                    });
+                }
+
+                res.send('<pre>' + body + '</pre>');
+            });
         }
     })
 })
