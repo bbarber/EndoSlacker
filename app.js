@@ -60,7 +60,7 @@ app.get('/', function (req, res) {
                 var last = buf.toString('utf8');
 
                 if (last !== body) {
-                    s3.upload({ Body: 'Hello!', ACL: 'public-read', ContentType: 'text/plain' }, function () {
+                    s3.upload({ Body: body, ACL: 'public-read', ContentType: 'text/plain' }, function () {
                         if (err) {
                             return console.log(err);
                         }
