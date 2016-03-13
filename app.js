@@ -1,8 +1,11 @@
 var express = require('express');
-var fs = require('fs');
+var aws = require('aws-sdk');
 var cheerio = require('cheerio');
 var request = require('request');
 var app = express();
+
+var AWS_ACCESS_KEY_ID = process.env.s3_key;
+var AWS_SECRET_ACCESS_KEY = process.env.s3_secret;
 
 app.get('/', function (req, res) {
     var url = 'https://www.endomondo.com/challenges/27408592';
@@ -40,13 +43,24 @@ app.get('/', function (req, res) {
 
             var body = list.join('\r\n');
 
-            fs.readFile("last.txt", 'utf8', function (err, last) {
-                if (err && err.code !== 'ENOENT')
-                    throw err;
+
+            var s3 = new aws.S3({ params: { Bucket: process.env.s3_bucket, Key: 'last.txt' } });
+
+            s3.getObject({
+                Bucket: process.env.s3_bucket,
+                Key: 'last.txt',
+                ResponseContentType: 'text/plain'
+            }, function (err, data) {
+                
+                // We get back a byte[] from s3, convert to string
+                var buf = new Buffer(data.Body.length);
+                for (var i = 0; i < data.Body.length; i++) {
+                    buf[i] = data.Body[i];
+                }
+                var last = buf.toString('utf8');
 
                 if (last !== body) {
-
-                    fs.writeFile("last.txt", body, function (err) {
+                    s3.upload({ Body: 'Hello!', ACL: 'public-read', ContentType: 'text/plain' }, function () {
                         if (err) {
                             return console.log(err);
                         }
@@ -60,7 +74,7 @@ app.get('/', function (req, res) {
                         request.post(options);
                     });
                 }
-
+                
                 res.send('<pre>' + body + '</pre>');
             });
         }
