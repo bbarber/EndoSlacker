@@ -8,7 +8,7 @@ var AWS_ACCESS_KEY_ID = process.env.s3_key;
 var AWS_SECRET_ACCESS_KEY = process.env.s3_secret;
 
 app.get('/', function (req, res) {
-    var url = 'https://www.endomondo.com/challenges/27408592';
+    var url = 'https://www.endomondo.com/challenges/28232496';
     request(url, function (error, response, html) {
         if (!error) {
             var $ = cheerio.load(html);
