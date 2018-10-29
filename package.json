@@ -6,10 +6,9 @@
     "start": "node app.js"
   },
   "dependencies": {
-    "aws-sdk": "^2.2.43",
     "cheerio": "^0.20.0",
     "ejs": "^2.3.1",
-    "express": "^4.13.3",
+    "lodash": "^4.17.4",
     "request": "^2.69.0"
   }
 }

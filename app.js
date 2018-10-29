@@ -1,84 +1,45 @@
-var express = require('express');
-var aws = require('aws-sdk');
-var cheerio = require('cheerio');
-var request = require('request');
-var app = express();
+const { fetchNamesAndScores } = require("./endomondo.js");
+const fs = require("fs");
+const _ = require("lodash");
+const { promisify } = require("util");
+const request = require("request");
 
-var AWS_ACCESS_KEY_ID = process.env.s3_key;
-var AWS_SECRET_ACCESS_KEY = process.env.s3_secret;
+const readFile = promisify(fs.readFile);
+const writeFile = promisify(fs.writeFile);
 
-app.get('/', function (req, res) {
-    var url = 'https://www.endomondo.com/challenges/28232496';
-    request(url, function (error, response, html) {
-        if (!error) {
-            var $ = cheerio.load(html);
+var SLACK_URL_TOKEN = process.env.SLACK_URL_TOKEN;
+var CHALLENGE_ID = process.env.CHALLENGE_ID;
 
-            var names = $('td .name').map(function (i, a) {
-                return a.children[0].data.replace('Norm', 'Nick');
-            });
+const formatBody = body => "```" + body + "```";
 
-            var maxLength = 0;
-            for (var i = 0; i < names.length; i++) {
-                if (names[i].length > maxLength)
-                    maxLength = names[i].length;
-            }
+const fileName = __dirname + "/last.txt";
+console.log(fileName);
 
-            // Pad names so scores right align
-            names = names.map(function (i, a) {
-                return a + Array(maxLength - a.length + 1).join(' ');
-            });
+fetchNamesAndScores(CHALLENGE_ID).then(namesAndScores => {
+  const list = namesAndScores.map(
+    ([name, score], index) => `${_.padStart(index + 1, 2)}: ${name} - ${score}`
+  );
+  const body = list.join("\n");
 
-            var scores = $('.nose').map(function (i, a) {
-                return a.children[0].data;
-            });
+  readFile(fileName, "utf8")
+    .catch(() => "")
+    .then(last => {
+      if (last !== body) {
+        const payload = {
+          text: formatBody(body),
+          username: "Endomondo",
+          icon_url:
+            "https://www.endomondo.com/assets/view/layout/header/assets/ua-header@2x.3ae9f356a186d4064e9a3ee956293bb3.png"
+        };
 
-            var arr = scores.map(function (i, score) {
-                return names[i] + ' - ' + score;
-            });
+        const options = {
+          url: SLACK_URL_TOKEN,
+          body: JSON.stringify(payload)
+        };
 
-            var list = [];
-            for (var i = 0; i < arr.length; i++) {
-                list.push(arr[i])
-            }
-
-            var body = list.join('\r\n');
-
-
-            var s3 = new aws.S3({ params: { Bucket: process.env.s3_bucket, Key: 'last.txt' } });
-
-            s3.getObject({
-                Bucket: process.env.s3_bucket,
-                Key: 'last.txt',
-                ResponseContentType: 'text/plain'
-            }, function (err, data) {
-                
-                // We get back a byte[] from s3, convert to string
-                var buf = new Buffer(data.Body.length);
-                for (var i = 0; i < data.Body.length; i++) {
-                    buf[i] = data.Body[i];
-                }
-                var last = buf.toString('utf8');
-
-                if (last !== body) {
-                    s3.upload({ Body: body, ACL: 'public-read', ContentType: 'text/plain' }, function () {
-                        if (err) {
-                            return console.log(err);
-                        }
-
-                        var params = '?token=' + process.env.token + '&channel=%23' + process.env.channel;
-                        var options = {
-                            url: 'https://dontpaniclabs.slack.com/services/hooks/slackbot' + params,
-                            body: "```" + body + "```"
-                        };
-
-                        request.post(options);
-                    });
-                }
-                
-                res.send('<pre>' + body + '</pre>');
-            });
-        }
-    })
-})
-
-app.listen(process.env.PORT || 3000)
+        return writeFile(fileName, body).then(() => {
+          request.post(options);
+        });
+      }
+    });
+});
